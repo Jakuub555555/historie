@@ -154,7 +154,7 @@
 
             // Uložení výsledku do zmiennej lastOutput i wyświetlenie na stránce
             lastOutput = `Analyzovaný tým/hráč: ${teamName}\nCelkový počet zápasů: ${matchCount}\n\n${output.trim()}`;
-            document.getElementById('output').innerHTML = lastOutput;
+            document.getElementById('output').innerHTML = lastOutput;  // Upravujeme výstup pomocí innerHTML pro HTML formátování
         }
 
         function copyToClipboard() {
