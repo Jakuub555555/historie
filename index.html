@@ -21,7 +21,7 @@ function processMatches() {
 
         // Check if the match is a "premature end" match
         if (score1 === '-' && score2 === '-' && result === 'W') {
-            output += `${player} vs ${opponent}: předčasné ukončení - Výhra\n`;
+            output += `${player} vs ${opponent}: předčasné ukončení - Výhra\n`; // Opraveno: použity zpětné apostrofy
             matchCount++;
             i += 7;
             continue;
@@ -41,12 +41,12 @@ function processMatches() {
             matchResult = result === 'W' ? 'Výhra' : 'Prohra';
         }
 
-        output += `${player} vs ${opponent}: ${parsedScore1}-${parsedScore2} - ${matchResult}\n`;
+        output += `${player} vs ${opponent}: ${parsedScore1}-${parsedScore2} - ${matchResult}\n`; // Opraveno: použity zpětné apostrofy
         matchCount++;
         i += 7;
     }
 
     // Uložení výsledku do zmiennej lastOutput a zobrazení na stránce
-    lastOutput = `Analyzovaný tým/hráč: ${teamName}\nCelkový počet zápasů: ${matchCount}\n\n${output.trim()}`;
+    lastOutput = `Analyzovaný tým/hráč: ${teamName}\nCelkový počet zápasů: ${matchCount}\n\n${output.trim()}`; // Opraveno: použity zpětné apostrofy
     document.getElementById('output').textContent = lastOutput;
 }
