@@ -1,52 +1,183 @@
-function processMatches() {
-    const input = document.getElementById('input').value.trim().split('\n').map(line => line.trim()).filter(line => line);
-    let output = '';
-    let matchCount = 0;
-    let teamName = ''; // Přidáno pro uložení jména týmu nebo hráče
-
-    // Získání jména týmu nebo hráče z prvního řádku
-    if (input.length > 0) {
-        teamName = input[0];
-    }
-
-    for (let i = 1; i < input.length; ) { // Změněn index na 1, abychom začali od druhého řádku
-        if (input[i].startsWith('Last matches:')) {
-            i++;
-            continue;
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Historie Zápasů</title>
+    <style>
+        body { 
+            font-family: Arial, sans-serif; 
+            margin: 0; 
+            padding: 0; 
+            background: #111; 
+            color: #fff; 
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            min-height: 100vh; 
+        }
+        #history_container { 
+            width: 100%; 
+            max-width: 800px; 
+            background: #222; 
+            border-radius: 10px; 
+            padding: 2rem; 
+            box-shadow: 0px 0px 20px rgba(0,0,0,0.5); 
+            text-align: center;
+        }
+        textarea { 
+            width: calc(100% - 20px); 
+            height: 300px; 
+            margin-bottom: 10px; 
+            padding: 10px; 
+            border-radius: 6px; 
+            border: 1px solid #444; 
+            background: #333; 
+            color: #fff; 
+            resize: none; 
+        }
+        button { 
+            margin: 5px; 
+            padding: 10px 20px; 
+            font-size: 14px; 
+            cursor: pointer; 
+            background: #444; 
+            border: none; 
+            border-radius: 6px; 
+            color: #fff; 
+        }
+        button:hover { 
+            background: #555; 
+        }
+        #output { 
+            border: none; 
+            padding: 10px; 
+            background: transparent; 
+            color: #fff; 
+            white-space: pre-wrap; 
+            margin-top: 1rem; 
+            text-align: left;
+        }
+        .button-container { 
+            display: flex; 
+            justify-content: center; 
+            gap: 10px; 
+            flex-wrap: wrap; 
+        }
+        nav { 
+            position: fixed; 
+            bottom: 0; 
+            right: 0; 
+            background: #222; 
+            padding: 1rem; 
+            border-top-left-radius: 8px; 
+        }
+        nav a { 
+            font-size: 1rem; 
+            color: #ffc61c; 
+            font-family: 'Agency FB Black', sans-serif; 
+            text-transform: uppercase; 
+            text-decoration: none; 
         }
 
-        if (i + 6 > input.length) break;
+        /* CSS pro výsledek zápasu */
+        .win { color: green; }
+        .loss { color: red; }
+        .draw { color: gray; }
+    </style>
+</head>
+<body>
+    <div id="history_container">
+        <h1>Historie Zápasů</h1>
+        <textarea id="input" placeholder="Vložte historii zápasů sem..."></textarea>
+        <div class="button-container">
+            <button onclick="processMatches()">Zobrazit Historii</button>
+            <button onclick="copyToClipboard()">Kopírovat</button>
+            <button onclick="clearOutput()">Odstranit</button>
+        </div>
+        <div id="output"></div>
+    </div>
 
-        const [date, tournament, player, opponent, score1, score2, result] = input.slice(i, i + 7);
+    <script>
+        let lastOutput = ''; // Przechowuje ostatni wynik do kopiowania
 
-        // Check if the match is a "premature end" match
-        if (score1 === '-' && score2 === '-' && result === 'W') {
-            output += `${player} vs ${opponent}: předčasné ukončení - Výhra\n`; // Opraveno: použity zpětné apostrofy
-            matchCount++;
-            i += 7;
-            continue;
+        function processMatches() {
+            const input = document.getElementById('input').value.trim().split('\n').map(line => line.trim()).filter(line => line);
+            let output = '';
+            let matchCount = 0;
+            let teamName = ''; // Přidáno pro uložení jména týmu nebo hráče
+
+            // Získání jména týmu nebo hráče z prvního řádku
+            if (input.length > 0) {
+                teamName = input[0];
+            }
+
+            for (let i = 1; i < input.length; ) { // Změněn index na 1, abychom začali od druhého řádku
+                if (input[i].startsWith('Last matches:')) {
+                    i++;
+                    continue;
+                }
+
+                if (i + 6 > input.length) break;
+
+                const [date, tournament, player, opponent, score1, score2, result] = input.slice(i, i + 7);
+
+                // Check if the match is a "premature end" match
+                if (score1 === '-' && score2 === '-' && result === 'W') {
+                    output += `<div class="win">${player} vs ${opponent}: předčasné ukončení - Výhra</div>`;
+                    matchCount++;
+                    i += 7;
+                    continue;
+                }
+
+                const parsedScore1 = parseInt(score1, 10);
+                const parsedScore2 = parseInt(score2, 10);
+                if (isNaN(parsedScore1) || isNaN(parsedScore2)) {
+                    i++;
+                    continue;
+                }
+
+                let matchResult;
+                let resultClass;
+                if (parsedScore1 === parsedScore2) {
+                    matchResult = 'Remíza';
+                    resultClass = 'draw';
+                } else {
+                    matchResult = result === 'W' ? 'Výhra' : 'Prohra';
+                    resultClass = result === 'W' ? 'win' : 'loss';
+                }
+
+                output += `<div class="${resultClass}">${player} vs ${opponent}: ${parsedScore1}-${parsedScore2} - ${matchResult}</div>`;
+                matchCount++;
+                i += 7;
+            }
+
+            // Uložení výsledku do zmiennej lastOutput i wyświetlenie na stránce
+            lastOutput = `Analyzovaný tým/hráč: ${teamName}\nCelkový počet zápasů: ${matchCount}\n\n${output.trim()}`;
+            document.getElementById('output').innerHTML = lastOutput;
         }
 
-        const parsedScore1 = parseInt(score1, 10);
-        const parsedScore2 = parseInt(score2, 10);
-        if (isNaN(parsedScore1) || isNaN(parsedScore2)) {
-            i++;
-            continue;
+        function copyToClipboard() {
+            // Sprawdź, czy wynik istnieje
+            if (lastOutput) {
+                // Utwórz tymczasový element textarea
+                const tempTextArea = document.createElement('textarea');
+                tempTextArea.value = lastOutput;
+                document.body.appendChild(tempTextArea);
+                tempTextArea.select();
+                document.execCommand('copy');
+                document.body.removeChild(tempTextArea);
+                alert('Výstup byl zkopírován do schránky!');
+            } else {
+                alert('Nejprve zobrazte historii, abyste ji mohli zkopírovat.');
+            }
         }
 
-        let matchResult;
-        if (parsedScore1 === parsedScore2) {
-            matchResult = 'Remíza';
-        } else {
-            matchResult = result === 'W' ? 'Výhra' : 'Prohra';
+        function clearOutput() {
+            document.getElementById('input').value = '';
+            document.getElementById('output').textContent = '';
+            lastOutput = '';
         }
-
-        output += `${player} vs ${opponent}: ${parsedScore1}-${parsedScore2} - ${matchResult}\n`; // Opraveno: použity zpětné apostrofy
-        matchCount++;
-        i += 7;
-    }
-
-    // Uložení výsledku do zmiennej lastOutput a zobrazení na stránce
-    lastOutput = `Analyzovaný tým/hráč: ${teamName}\nCelkový počet zápasů: ${matchCount}\n\n${output.trim()}`; // Opraveno: použity zpětné apostrofy
-    document.getElementById('output').textContent = lastOutput;
-}
+    </script>
+</body>
+</html>
