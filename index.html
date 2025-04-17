@@ -1,36 +1,47 @@
-Poslední zápasy: Duckworth J.
-15.04.25
-LUI
-Duckworth J.
-De Alba R.
-2
-0
-V
-10.04.25
-MEX
-Duckworth J.
-Varillas J. P.
-1
-2
-P
-08.04.25
-MEX
-Duckworth J.
-Alves M.
-2
-0
-V
-01.04.25
-HOU
-Smith C.
-Duckworth J.
-2
-0
-P
-21.05.24
-FO
-Duckworth J.
-Janvier M.
-0
-2
-P
+function processMatches() {
+    const input = document.getElementById('input').value.trim().split('\n').map(line => line.trim()).filter(line => line);
+    let output = '';
+    let matchCount = 0;
+    let playerName = '';
+
+    // Získání jména hráče z hlavičky
+    if (input[0].startsWith('Poslední zápasy:')) {
+        playerName = input[0].replace('Poslední zápasy:', '').trim();
+    } else {
+        document.getElementById('output').textContent = 'Chybný formát – chybí hlavička s názvem hráče.';
+        return;
+    }
+
+    // Zpracování zápasů po 8 řádcích
+    for (let i = 1; i + 7 < input.length; i += 8) {
+        const date = input[i];
+        const tournament = input[i + 1];
+        const player1 = input[i + 2];
+        const player2 = input[i + 3];
+        const score1 = parseInt(input[i + 4], 10);
+        const score2 = parseInt(input[i + 5], 10);
+        const result = input[i + 6];
+
+        if (isNaN(score1) || isNaN(score2)) continue;
+
+        let opponent = player1 === playerName ? player2 : player1;
+        let isPlayerFirst = player1 === playerName;
+
+        // Určí výsledek podle pozice hráče a značky 'V' nebo 'P'
+        let matchResult = '';
+        if (score1 === score2) {
+            matchResult = 'Remíza';
+        } else {
+            const playerWon = (isPlayerFirst && result === 'V') || (!isPlayerFirst && result === 'P');
+            matchResult = playerWon ? 'Výhra' : 'Prohra';
+        }
+
+        const scoreDisplay = isPlayerFirst ? `${score1}-${score2}` : `${score2}-${score1}`;
+
+        output += `${playerName} vs ${opponent}: ${scoreDisplay} - ${matchResult}\n`;
+        matchCount++;
+    }
+
+    lastOutput = `Analyzovaný tým/hráč: ${playerName}\nCelkový počet zápasů: ${matchCount}\n\n${output.trim()}`;
+    document.getElementById('output').textContent = lastOutput;
+}
