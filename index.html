@@ -2,46 +2,51 @@ function processMatches() {
     const input = document.getElementById('input').value.trim().split('\n').map(line => line.trim()).filter(line => line);
     let output = '';
     let matchCount = 0;
-    let playerName = '';
+    let teamName = ''; // Přidáno pro uložení jména týmu nebo hráče
 
-    // Získání jména hráče z hlavičky
-    if (input[0].startsWith('Poslední zápasy:')) {
-        playerName = input[0].replace('Poslední zápasy:', '').trim();
-    } else {
-        document.getElementById('output').textContent = 'Chybný formát – chybí hlavička s názvem hráče.';
-        return;
+    // Získání jména týmu nebo hráče z prvního řádku
+    if (input.length > 0) {
+        teamName = input[0];
     }
 
-    // Zpracování zápasů po 8 řádcích
-    for (let i = 1; i + 7 < input.length; i += 8) {
-        const date = input[i];
-        const tournament = input[i + 1];
-        const player1 = input[i + 2];
-        const player2 = input[i + 3];
-        const score1 = parseInt(input[i + 4], 10);
-        const score2 = parseInt(input[i + 5], 10);
-        const result = input[i + 6];
-
-        if (isNaN(score1) || isNaN(score2)) continue;
-
-        let opponent = player1 === playerName ? player2 : player1;
-        let isPlayerFirst = player1 === playerName;
-
-        // Určí výsledek podle pozice hráče a značky 'V' nebo 'P'
-        let matchResult = '';
-        if (score1 === score2) {
-            matchResult = 'Remíza';
-        } else {
-            const playerWon = (isPlayerFirst && result === 'V') || (!isPlayerFirst && result === 'P');
-            matchResult = playerWon ? 'Výhra' : 'Prohra';
+    for (let i = 1; i < input.length; ) { // Změněn index na 1, abychom začali od druhého řádku
+        if (input[i].startsWith('Last matches:')) {
+            i++;
+            continue;
         }
 
-        const scoreDisplay = isPlayerFirst ? `${score1}-${score2}` : `${score2}-${score1}`;
+        if (i + 6 > input.length) break;
 
-        output += `${playerName} vs ${opponent}: ${scoreDisplay} - ${matchResult}\n`;
+        const [date, tournament, player, opponent, score1, score2, result] = input.slice(i, i + 7);
+
+        // Check if the match is a "premature end" match
+        if (score1 === '-' && score2 === '-' && result === 'W') {
+            output += `${player} vs ${opponent}: předčasné ukončení - Výhra\n`;
+            matchCount++;
+            i += 7;
+            continue;
+        }
+
+        const parsedScore1 = parseInt(score1, 10);
+        const parsedScore2 = parseInt(score2, 10);
+        if (isNaN(parsedScore1) || isNaN(parsedScore2)) {
+            i++;
+            continue;
+        }
+
+        let matchResult;
+        if (parsedScore1 === parsedScore2) {
+            matchResult = 'Remíza';
+        } else {
+            matchResult = result === 'W' ? 'Výhra' : 'Prohra';
+        }
+
+        output += `${player} vs ${opponent}: ${parsedScore1}-${parsedScore2} - ${matchResult}\n`;
         matchCount++;
+        i += 7;
     }
 
-    lastOutput = `Analyzovaný tým/hráč: ${playerName}\nCelkový počet zápasů: ${matchCount}\n\n${output.trim()}`;
+    // Uložení výsledku do zmiennej lastOutput a zobrazení na stránce
+    lastOutput = `Analyzovaný tým/hráč: ${teamName}\nCelkový počet zápasů: ${matchCount}\n\n${output.trim()}`;
     document.getElementById('output').textContent = lastOutput;
 }
