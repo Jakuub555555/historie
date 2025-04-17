@@ -79,10 +79,9 @@
             text-transform: uppercase; 
             text-decoration: none; 
         }
-
-        /* CSS pro výsledek zápasu */
+        /* Barvy pro výhru, prohru a remízu */
         .win { color: green; }
-        .loss { color: red; }
+        .lose { color: red; }
         .draw { color: gray; }
     </style>
 </head>
@@ -124,7 +123,7 @@
 
                 // Check if the match is a "premature end" match
                 if (score1 === '-' && score2 === '-' && result === 'W') {
-                    output += `${player} vs ${opponent}: předčasné ukončení - V\n`;  // "V" pro Výhru
+                    output += `<span class="win">${player} vs ${opponent}: předčasné ukončení - Výhra</span><br>`;
                     matchCount++;
                     i += 7;
                     continue;
@@ -138,33 +137,32 @@
                 }
 
                 let matchResult;
-                // Podmínky pro výhru (V), prohru (P) a remízu (R)
+                let resultClass;
                 if (parsedScore1 === parsedScore2) {
-                    matchResult = 'R'; // Remíza
+                    matchResult = 'Remíza';
+                    resultClass = 'draw';
+                } else if (result === 'W') {
+                    matchResult = 'Výhra';
+                    resultClass = 'win';
                 } else {
-                    if (result === 'W' && parsedScore1 > parsedScore2) {
-                        matchResult = 'V'; // Výhra
-                    } else if (result === 'L' && parsedScore1 < parsedScore2) {
-                        matchResult = 'P'; // Prohra
-                    } else {
-                        matchResult = 'P'; // Pokud není výhra, je to prohra
-                    }
+                    matchResult = 'Prohra';
+                    resultClass = 'lose';
                 }
 
-                output += `${player} vs ${opponent}: ${parsedScore1}-${parsedScore2} - ${matchResult}\n`;
+                output += `<span class="${resultClass}">${player} vs ${opponent}: ${parsedScore1}-${parsedScore2} - ${matchResult}</span><br>`;
                 matchCount++;
                 i += 7;
             }
 
-            // Uložení výsledku do zmiennej lastOutput i wyświetlenie na stránce
+            // Uložení výsledku do zmiennej lastOutput i wyświetlenie na stronie
             lastOutput = `Analyzovaný tým/hráč: ${teamName}\nCelkový počet zápasů: ${matchCount}\n\n${output.trim()}`;
-            document.getElementById('output').textContent = lastOutput;  // Zobrazení výsledku ve formátu textu
+            document.getElementById('output').innerHTML = lastOutput;
         }
 
         function copyToClipboard() {
             // Sprawdź, czy wynik istnieje
             if (lastOutput) {
-                // Utwórz tymczasový element textarea
+                // Utwórz tymczasowy element textarea
                 const tempTextArea = document.createElement('textarea');
                 tempTextArea.value = lastOutput;
                 document.body.appendChild(tempTextArea);
