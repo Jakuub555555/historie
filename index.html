@@ -124,7 +124,7 @@
 
                 // Check if the match is a "premature end" match
                 if (score1 === '-' && score2 === '-' && result === 'W') {
-                    output += `<div class="win">${player} vs ${opponent}: předčasné ukončení - Výhra</div>`;
+                    output += `${player} vs ${opponent}: předčasné ukončení - V\n`;  // "V" pro Výhru
                     matchCount++;
                     i += 7;
                     continue;
@@ -138,23 +138,27 @@
                 }
 
                 let matchResult;
-                let resultClass;
+                // Podmínky pro výhru (V), prohru (P) a remízu (R)
                 if (parsedScore1 === parsedScore2) {
-                    matchResult = 'Remíza';
-                    resultClass = 'draw';
+                    matchResult = 'R'; // Remíza
                 } else {
-                    matchResult = result === 'W' ? 'Výhra' : 'Prohra';
-                    resultClass = result === 'W' ? 'win' : 'loss';
+                    if (result === 'W' && parsedScore1 > parsedScore2) {
+                        matchResult = 'V'; // Výhra
+                    } else if (result === 'L' && parsedScore1 < parsedScore2) {
+                        matchResult = 'P'; // Prohra
+                    } else {
+                        matchResult = 'P'; // Pokud není výhra, je to prohra
+                    }
                 }
 
-                output += `<div class="${resultClass}">${player} vs ${opponent}: ${parsedScore1}-${parsedScore2} - ${matchResult}</div>`;
+                output += `${player} vs ${opponent}: ${parsedScore1}-${parsedScore2} - ${matchResult}\n`;
                 matchCount++;
                 i += 7;
             }
 
             // Uložení výsledku do zmiennej lastOutput i wyświetlenie na stránce
             lastOutput = `Analyzovaný tým/hráč: ${teamName}\nCelkový počet zápasů: ${matchCount}\n\n${output.trim()}`;
-            document.getElementById('output').innerHTML = lastOutput;  // Upravujeme výstup pomocí innerHTML pro HTML formátování
+            document.getElementById('output').textContent = lastOutput;  // Zobrazení výsledku ve formátu textu
         }
 
         function copyToClipboard() {
