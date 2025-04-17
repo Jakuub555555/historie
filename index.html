@@ -1,3 +1,5 @@
+Moje html : 
+
 <!DOCTYPE html>
 <html lang="cs">
 <head>
@@ -79,10 +81,6 @@
             text-transform: uppercase; 
             text-decoration: none; 
         }
-        /* Barvy pro výhru, prohru a remízu */
-        .win { color: green; }
-        .lose { color: red; }
-        .draw { color: gray; }
     </style>
 </head>
 <body>
@@ -123,7 +121,7 @@
 
                 // Check if the match is a "premature end" match
                 if (score1 === '-' && score2 === '-' && result === 'W') {
-                    output += `<span class="win">${player} vs ${opponent}: předčasné ukončení - Výhra</span><br>`;
+                    output += `${player} vs ${opponent}: předčasné ukončení - Výhra\n`;
                     matchCount++;
                     i += 7;
                     continue;
@@ -137,26 +135,20 @@
                 }
 
                 let matchResult;
-                let resultClass;
                 if (parsedScore1 === parsedScore2) {
                     matchResult = 'Remíza';
-                    resultClass = 'draw';
-                } else if (result === 'W') {
-                    matchResult = 'Výhra';
-                    resultClass = 'win';
                 } else {
-                    matchResult = 'Prohra';
-                    resultClass = 'lose';
+                    matchResult = result === 'W' ? 'Výhra' : 'Prohra';
                 }
 
-                output += `<span class="${resultClass}">${player} vs ${opponent}: ${parsedScore1}-${parsedScore2} - ${matchResult}</span><br>`;
+                output += `${player} vs ${opponent}: ${parsedScore1}-${parsedScore2} - ${matchResult}\n`;
                 matchCount++;
                 i += 7;
             }
 
             // Uložení výsledku do zmiennej lastOutput i wyświetlenie na stronie
             lastOutput = `Analyzovaný tým/hráč: ${teamName}\nCelkový počet zápasů: ${matchCount}\n\n${output.trim()}`;
-            document.getElementById('output').innerHTML = lastOutput;
+            document.getElementById('output').textContent = lastOutput;
         }
 
         function copyToClipboard() {
