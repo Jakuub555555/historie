@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Historie Zápasů</title>
-<link rel="icon" href="https://i.imgur.com/W8ufoBX.png" type="image/png">
+    <link rel="icon" href="https://i.imgur.com/W8ufoBX.png" type="image/png">
     <style>
         body { 
             font-family: Arial, sans-serif; 
@@ -95,32 +95,41 @@
     </div>
 
     <script>
-        let lastOutput = ''; // Przechowuje ostatni wynik do kopiowania
+        let lastOutput = '';
 
         function processMatches() {
-            const input = document.getElementById('input').value.trim().split('\n').map(line => line.trim()).filter(line => line);
+            const input = document.getElementById('input').value
+                .trim()
+                .split('\n')
+                .map(line => line.trim())
+                .filter(line => line);
+
             let output = '';
             let matchCount = 0;
-            let teamName = ''; // Přidáno pro uložení jména týmu nebo hráče
+            let teamName = '';
 
-            // Získání jména týmu nebo hráče z prvního řádku
+            // První řádek = název týmu/hráče (např. "Last matches: Egypt")
             if (input.length > 0) {
                 teamName = input[0];
             }
 
-            for (let i = 1; i < input.length; ) { // Změněn index na 1, abychom začali od druhého řádku
+            // Začínáme od druhého řádku
+            for (let i = 1; i < input.length; ) {
+
                 if (input[i].startsWith('Last matches:')) {
                     i++;
                     continue;
                 }
 
+                // Každý zápas = 7 řádků:
+                // date, tournament, player, opponent, score1, score2, result
                 if (i + 6 > input.length) break;
 
                 const [date, tournament, player, opponent, score1, score2, result] = input.slice(i, i + 7);
 
-                // Check if the match is a "premature end" match
+                // Předčasné ukončení
                 if (score1 === '-' && score2 === '-' && result === 'W') {
-                    output += `${player} vs ${opponent}: předčasné ukončení - Výhra\n`;
+                    output += `${player} vs ${opponent}: předčasné ukončení - Výhra (${date})\n`;
                     matchCount++;
                     i += 7;
                     continue;
@@ -128,6 +137,7 @@
 
                 const parsedScore1 = parseInt(score1, 10);
                 const parsedScore2 = parseInt(score2, 10);
+
                 if (isNaN(parsedScore1) || isNaN(parsedScore2)) {
                     i++;
                     continue;
@@ -140,20 +150,18 @@
                     matchResult = result === 'W' ? 'Výhra' : 'Prohra';
                 }
 
-                output += `${player} vs ${opponent}: ${parsedScore1}-${parsedScore2} - ${matchResult}\n`;
+                // Tady nově doplňuju datum (a případně čas, pokud je na stejném řádku)
+                output += `${player} vs ${opponent}: ${parsedScore1}-${parsedScore2} - ${matchResult} (${date})\n`;
                 matchCount++;
                 i += 7;
             }
 
-            // Uložení výsledku do zmiennej lastOutput i wyświetlenie na stronie
             lastOutput = `Analyzovaný tým/hráč: ${teamName}\nCelkový počet zápasů: ${matchCount}\n\n${output.trim()}`;
             document.getElementById('output').textContent = lastOutput;
         }
 
         function copyToClipboard() {
-            // Sprawdź, czy wynik istnieje
             if (lastOutput) {
-                // Utwórz tymczasowy element textarea
                 const tempTextArea = document.createElement('textarea');
                 tempTextArea.value = lastOutput;
                 document.body.appendChild(tempTextArea);
