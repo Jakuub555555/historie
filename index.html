@@ -65,21 +65,6 @@
             gap: 10px; 
             flex-wrap: wrap; 
         }
-        nav { 
-            position: fixed; 
-            bottom: 0; 
-            right: 0; 
-            background: #222; 
-            padding: 1rem; 
-            border-top-left-radius: 8px; 
-        }
-        nav a { 
-            font-size: 1rem; 
-            color: #ffc61c; 
-            font-family: 'Agency FB Black', sans-serif; 
-            text-transform: uppercase; 
-            text-decoration: none; 
-        }
     </style>
 </head>
 <body>
@@ -98,62 +83,95 @@
         let lastOutput = '';
 
         function processMatches() {
-            const input = document.getElementById('input').value
-                .trim()
-                .split('\n')
-                .map(line => line.trim())
-                .filter(line => line);
+            const raw = document.getElementById('input').value.trim();
+            const lines = raw.split('\n').map(l => l.trim()).filter(l => l !== '');
 
             let output = '';
             let matchCount = 0;
-            let teamName = '';
 
-            // První řádek = název týmu/hráče (např. "Last matches: Egypt")
-            if (input.length > 0) {
-                teamName = input[0];
+            const teamName = lines[0] || 'Neznámý tým';
+
+            // Helper: najde první W/L/D v okolí
+            function findResult(arr, idx) {
+                const valid = ['W', 'L', 'D'];
+                for (let o = 0; o < 6; o++) {
+                    if (valid.includes(arr[idx + o])) return arr[idx + o];
+                }
+                return null;
             }
 
-            // Začínáme od druhého řádku
-            for (let i = 1; i < input.length; ) {
+            // Helper: najde první dvě čísla jako skóre
+            function findScores(arr, idx) {
+                let nums = [];
+                for (let o = 0; o < 8; o++) {
+                    if (!arr[idx + o]) continue;
+                    if (!isNaN(arr[idx + o])) nums.push(arr[idx + o]);
+                    if (nums.length === 2) break;
+                }
+                return nums.length === 2 ? nums : null;
+            }
 
-                if (input[i].startsWith('Last matches:')) {
+            for (let i = 1; i < lines.length; ) {
+
+                // 1) Datum (může obsahovat čas)
+                const date = lines[i];
+                if (!date.match(/^\d{2}\.\d{2}\.\d{2}/)) {
                     i++;
                     continue;
                 }
 
-                // Každý zápas = 7 řádků:
-                // date, tournament, player, opponent, score1, score2, result
-                if (i + 6 > input.length) break;
+                // 2) Turnaj
+                const tournament = lines[i + 1] || '';
 
-                const [date, tournament, player, opponent, score1, score2, result] = input.slice(i, i + 7);
+                // 3) Tým 1
+                const team1 = lines[i + 2] || '';
 
-                // Předčasné ukončení
-                if (score1 === '-' && score2 === '-' && result === 'W') {
-                    output += `${player} vs ${opponent}: předčasné ukončení - Výhra (${date})\n`;
-                    matchCount++;
-                    i += 7;
+                // 4) Tým 2
+                const team2 = lines[i + 3] || '';
+
+                // 5–6) Skóre (najdeme první dvě čísla)
+                const scores = findScores(lines, i + 4);
+                if (!scores) {
+                    i += 5;
                     continue;
                 }
+                const s1 = parseInt(scores[0]);
+                const s2 = parseInt(scores[1]);
 
-                const parsedScore1 = parseInt(score1, 10);
-                const parsedScore2 = parseInt(score2, 10);
+                // 7) Výsledek (W/L/D)
+                const result = findResult(lines, i + 4);
 
-                if (isNaN(parsedScore1) || isNaN(parsedScore2)) {
-                    i++;
-                    continue;
+                // Určení, zda analyzovaný tým je vlevo nebo vpravo
+                const analyzed = teamName.replace("Last matches: ", "").trim().toLowerCase();
+                const left = team1.toLowerCase();
+                const right = team2.toLowerCase();
+
+                let matchResult = 'Remíza';
+
+                if (result === 'W') {
+                    if (left === analyzed) matchResult = 'Výhra';
+                    else if (right === analyzed) matchResult = 'Výhra';
+                    else matchResult = 'Výhra';
                 }
 
-                let matchResult;
-                if (parsedScore1 === parsedScore2) {
+                if (result === 'L') {
+                    if (left === analyzed) matchResult = 'Prohra';
+                    else if (right === analyzed) matchResult = 'Prohra';
+                    else matchResult = 'Prohra';
+                }
+
+                if (result === 'D') {
                     matchResult = 'Remíza';
-                } else {
-                    matchResult = result === 'W' ? 'Výhra' : 'Prohra';
                 }
 
-                // Tady nově doplňuju datum (a případně čas, pokud je na stejném řádku)
-                output += `${player} vs ${opponent}: ${parsedScore1}-${parsedScore2} - ${matchResult} (${date})\n`;
+                output += `${team1} vs ${team2}: ${s1}-${s2} - ${matchResult} (${date})\n`;
                 matchCount++;
-                i += 7;
+
+                // Posuneme index — najdeme první řádek po výsledku
+                let jump = 4;
+                while (lines[i + jump] && !['W','L','D'].includes(lines[i + jump])) jump++;
+                jump++; // přeskočíme i výsledek
+                i += jump;
             }
 
             lastOutput = `Analyzovaný tým/hráč: ${teamName}\nCelkový počet zápasů: ${matchCount}\n\n${output.trim()}`;
@@ -161,17 +179,14 @@
         }
 
         function copyToClipboard() {
-            if (lastOutput) {
-                const tempTextArea = document.createElement('textarea');
-                tempTextArea.value = lastOutput;
-                document.body.appendChild(tempTextArea);
-                tempTextArea.select();
-                document.execCommand('copy');
-                document.body.removeChild(tempTextArea);
-                alert('Výstup byl zkopírován do schránky!');
-            } else {
-                alert('Nejprve zobrazte historii, abyste ji mohli zkopírovat.');
-            }
+            if (!lastOutput) return alert('Nejprve zobrazte historii.');
+            const t = document.createElement('textarea');
+            t.value = lastOutput;
+            document.body.appendChild(t);
+            t.select();
+            document.execCommand('copy');
+            document.body.removeChild(t);
+            alert('Zkopírováno!');
         }
 
         function clearOutput() {
