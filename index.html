@@ -91,87 +91,58 @@
 
             const teamName = lines[0] || 'Neznámý tým';
 
-            // Helper: najde první W/L/D v okolí
-            function findResult(arr, idx) {
-                const valid = ['W', 'L', 'D'];
-                for (let o = 0; o < 6; o++) {
-                    if (valid.includes(arr[idx + o])) return arr[idx + o];
-                }
-                return null;
-            }
+            let i = 1;
 
-            // Helper: najde první dvě čísla jako skóre
-            function findScores(arr, idx) {
-                let nums = [];
-                for (let o = 0; o < 8; o++) {
-                    if (!arr[idx + o]) continue;
-                    if (!isNaN(arr[idx + o])) nums.push(arr[idx + o]);
-                    if (nums.length === 2) break;
-                }
-                return nums.length === 2 ? nums : null;
-            }
-
-            for (let i = 1; i < lines.length; ) {
-
-                // 1) Datum (může obsahovat čas)
-                const date = lines[i];
-                if (!date.match(/^\d{2}\.\d{2}\.\d{2}/)) {
+            while (i < lines.length) {
+                // 1) Najdi datum
+                if (!lines[i] || !lines[i].match(/^\d{2}\.\d{2}\.\d{2}/)) {
                     i++;
                     continue;
                 }
 
-                // 2) Turnaj
-                const tournament = lines[i + 1] || '';
+                const date = lines[i];       // např. 25.05.26
+                // lines[i+1] = turnaj (DIV apod.)
 
-                // 3) Tým 1
+                // Struktura bloku (každý název týmu je zdvojen):
+                // i+0  datum
+                // i+1  turnaj
+                // i+2  team1  (první výskyt)
+                // i+3  team1  (duplikát – přeskočíme)
+                // i+4  team2  (první výskyt)
+                // i+5  team2  (duplikát – přeskočíme)
+                // i+6  skóre1
+                // i+7  skóre2
+                // i+8  W/L/D
+
                 const team1 = lines[i + 2] || '';
+                const team2 = lines[i + 4] || '';
 
-                // 4) Tým 2
-                const team2 = lines[i + 3] || '';
+                const score1Raw = lines[i + 6];
+                const score2Raw = lines[i + 7];
 
-                // 5–6) Skóre (najdeme první dvě čísla)
-                const scores = findScores(lines, i + 4);
-                if (!scores) {
-                    i += 5;
+                if (!score1Raw || !score2Raw || isNaN(score1Raw) || isNaN(score2Raw)) {
+                    i += 9;
                     continue;
                 }
-                const s1 = parseInt(scores[0]);
-                const s2 = parseInt(scores[1]);
 
-                // 7) Výsledek (W/L/D)
-                const result = findResult(lines, i + 4);
+                const s1 = parseInt(score1Raw);
+                const s2 = parseInt(score2Raw);
 
-                // Určení, zda analyzovaný tým je vlevo nebo vpravo
-                const analyzed = teamName.replace("Last matches: ", "").trim().toLowerCase();
-                const left = team1.toLowerCase();
-                const right = team2.toLowerCase();
-
-                let matchResult = 'Remíza';
-
-                if (result === 'W') {
-                    if (left === analyzed) matchResult = 'Výhra';
-                    else if (right === analyzed) matchResult = 'Výhra';
-                    else matchResult = 'Výhra';
+                const resultRaw = (lines[i + 8] || '').toUpperCase();
+                if (!['W', 'L', 'D'].includes(resultRaw)) {
+                    i += 9;
+                    continue;
                 }
 
-                if (result === 'L') {
-                    if (left === analyzed) matchResult = 'Prohra';
-                    else if (right === analyzed) matchResult = 'Prohra';
-                    else matchResult = 'Prohra';
-                }
-
-                if (result === 'D') {
-                    matchResult = 'Remíza';
-                }
+                let matchResult;
+                if (resultRaw === 'D') matchResult = 'Remíza';
+                else if (resultRaw === 'W') matchResult = 'Výhra';
+                else matchResult = 'Prohra';
 
                 output += `${team1} vs ${team2}: ${s1}-${s2} - ${matchResult} (${date})\n`;
                 matchCount++;
 
-                // Posuneme index — najdeme první řádek po výsledku
-                let jump = 4;
-                while (lines[i + jump] && !['W','L','D'].includes(lines[i + jump])) jump++;
-                jump++; // přeskočíme i výsledek
-                i += jump;
+                i += 9; // každý blok má přesně 9 řádků
             }
 
             lastOutput = `Analyzovaný tým/hráč: ${teamName}\nCelkový počet zápasů: ${matchCount}\n\n${output.trim()}`;
